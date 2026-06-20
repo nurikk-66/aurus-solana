@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aurus - Isolated Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body { background: #06040d; color: #e2e8f0; font-family: sans-serif; padding: 20px; }
+        .panel { background: rgba(13,9,29,0.8); border: 1px solid rgba(153,69,255,0.3); border-radius: 12px; padding: 20px; margin: 10px 0; }
+        button { background: linear-gradient(to right, #9945FF, #14F195); color: #000; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        button:hover { opacity: 0.9; }
+        input, select { background: rgba(0,0,0,0.4); border: 1px solid rgba(153,69,255,0.3); color: white; padding: 8px; border-radius: 6px; width: 100%; margin: 4px 0; }
+        .success { color: #14F195; }
+        .error { color: #ef4444; }
+        .log { background: #000; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Aurus Merchant Portal - Isolated Test</h1>
+    <div id="status" class="panel">Loading...</div>
+
+    <div class="panel">
+        <h2>Test 1: Backend State</h2>
+        <button onclick="testBackend()">Test Backend</button>
+        <div id="backendResult" class="log"></div>
+    </div>
+
+    <div class="panel">
+        <h2>Test 2: Link Generation</h2>
+        <input type="text" id="testProduct" value="Test Product" placeholder="Product">
+        <input type="number" id="testPrice" value="0.05" step="0.001" placeholder="Price">
+        <select id="testTier">
+            <option>Premium</option>
+            <option>VIP</option>
+            <option>Basic</option>
+        </select>
+        <button onclick="testLinkGen()">Generate Link</button>
+        <div id="linkResult" class="log"></div>
+    </div>
+
+    <div class="panel">
+        <h2>Test 3: Payment Simulation</h2>
+        <button onclick="testPayment()">Simulate Payment</button>
+        <div id="paymentResult" class="log"></div>
+    </div>
+
+    <div class="panel">
+        <h2>Test 4: Charts</h2>
+        <canvas id="testChart" width="400" height="200"></canvas>
+        <div id="chartResult" class="log"></div>
+    </div>
+
+    <script>
+        // Copy backend.js logic inline for testing
+        (function() {
+            const log = (id, msg) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent += msg + '\n';
+                console.log(msg);
+            };
+
+            // Initialize status
+            document.getElementById('status').innerHTML = `
+                <h2 class="success">✓ Page Loaded</h2>
+                <p>Chart.js: ${typeof Chart !== 'undefined' ? 'Loaded' : 'Missing'}</p>
+                <p>localStorage: ${typeof localStorage !== 'undefined' ? 'Available' : 'Unavailable'}</p>
+            `;
+
+            // Backend State
+            const STORAGE_KEY = 'aurus_test_state';
+            let state = { links: [], transactions: [] };
+
+            function saveState() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            }
+
+            function loadState() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) state = JSON.parse(raw);
+                } catch(e) {
+                    console.warn('State reset', e);
+                }
+                return state;
+            }
+
+            // Test 1: Backend
+            window.testBackend = function() {
+                const result = document.getElementById('backendResult');
+                result.textContent = 'Testing backend...\n';
+                try {
+                    const s = loadState();
+                    result.textContent += `✓ State loaded\n`;
+                    result.textContent += `  Links: ${s.links.length}\n`;
+                    result.textContent += `  Transactions: ${s.transactions.length}\n`;
+
+                    // Test record
+                    state.links.push({ id: 'test-1', url: 'http://test.com', price: 0.05 });
+                    saveState();
+                    result.textContent += `✓ Recorded test link\n`;
+
+                    // Test revenue calc
+                    const revenue = state.transactions
+                        .filter(t => t.status === 'Success')
+                        .reduce((sum, t) => sum + t.amount, 0);
+                    result.textContent += `✓ Revenue calc works: ${revenue} SOL\n`;
+                    result.className = 'log success';
+                } catch(e) {
+                    result.textContent += `✗ Error: ${e.message}\n`;
+                    result.className = 'log error';
+                }
+            };
+
+            // Test 2: Link Generation
+            window.testLinkGen = function() {
+                const result = document.getElementById('linkResult');
+                result.textContent = 'Generating link...\n';
+                try {
+                    const product = document.getElementById('testProduct').value;
+                    const price = parseFloat(document.getElementById('testPrice').value) || 0;
+                    const tier = document.getElementById('testTier').value;
+
+                    const baseUrl = window.location.origin + window.location.pathname;
+                    const gatewayUrl = `${baseUrl}?price=${price}&tier=${encodeURIComponent(tier)}&product=${encodeURIComponent(product)}`;
+
+                    state.links.push({
+                        id: `link-${Date.now()}`,
+                        url: gatewayUrl,
+                        product,
+                        tier,
+                        price
+                    });
+                    saveState();
+
+                    result.textContent += `✓ Link generated:\n`;
+                    result.textContent += `  ${gatewayUrl}\n`;
+                    result.className = 'log success';
+                } catch(e) {
+                    result.textContent += `✗ Error: ${e.message}\n`;
+                    result.className = 'log error';
+                }
+            };
+
+            // Test 3: Payment
+            window.testPayment = function() {
+                const result = document.getElementById('paymentResult');
+                result.textContent = 'Processing payment...\n';
+                try {
+                    const price = 0.05;
+                    const status = 'Success';
+
+                    state.transactions.push({
+                        id: `tx-${Date.now()}`,
+                        amount: price,
+                        tier: 'Premium',
+                        status,
+                        timestamp: Date.now()
+                    });
+                    saveState();
+
+                    result.textContent += `✓ Payment recorded\n`;
+                    result.textContent += `  Amount: ${price} SOL\n`;
+                    result.textContent += `  Status: ${status}\n`;
+
+                    const revenue = state.transactions
+                        .filter(t => t.status === 'Success')
+                        .reduce((sum, t) => sum + t.amount, 0);
+                    result.textContent += `  Total Revenue: ${revenue} SOL\n`;
+                    result.className = 'log success';
+                } catch(e) {
+                    result.textContent += `✗ Error: ${e.message}\n`;
+                    result.className = 'log error';
+                }
+            };
+
+            // Test 4: Charts
+            window.testChart = function() {
+                const result = document.getElementById('chartResult');
+                try {
+                    if (typeof Chart === 'undefined') {
+                        throw new Error('Chart.js not loaded');
+                    }
+
+                    const ctx = document.getElementById('testChart');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Mon', 'Tue', 'Wed'],
+                            datasets: [{
+                                label: 'Test',
+                                data: [1, 2, 3],
+                                borderColor: '#14F195',
+                                tension: 0.4
+                            }]
+                        }
+                    });
+
+                    result.textContent = '✓ Chart created successfully\n';
+                    result.className = 'log success';
+                } catch(e) {
+                    result.textContent = `✗ Chart error: ${e.message}\n`;
+                    result.className = 'log error';
+                }
+            };
+
+            // Auto-run chart test
+            setTimeout(window.testChart, 500);
+
+            log('backendResult', 'All tests ready. Click buttons to test.');
+        })();
+    </script>
+</body>
+</html>
