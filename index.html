@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurus Merchant Portal — Cyberpunk Premium Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            background-color: #06040d;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(153, 69, 255, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(20, 241, 149, 0.08) 0px, transparent 50%);
+        }
+        .cyber-panel {
+            background: rgba(13, 9, 29, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(153, 69, 255, 0.15);
+        }
+        .glow-active {
+            box-shadow: 0 0 30px rgba(20, 241, 149, 0.2);
+            border-color: #14F195;
+        }
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(20, 241, 149, 0.05);
+            animation: scanline 4s linear infinite;
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen p-6 font-sans">
+    <div class="scanline"></div>
+
+    <div class="max-w-7xl mx-auto space-y-6">
+
+        <header class="flex justify-between items-center border-b border-purple-950/30 pb-4">
+            <div>
+                <p class="text-[10px] tracking-widest font-mono text-purple-400 font-bold uppercase">Web3 SaaS Ecosystem</p>
+                <h1 class="text-3xl font-black mt-1 tracking-tight">Merchant Portal — <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-[#14F195]">Cyberpunk premium dashboard</span></h1>
+            </div>
+            <div class="text-right">
+                <span class="text-[10px] font-mono text-slate-500 block uppercase">Connected Network</span>
+                <span class="text-xs font-mono text-[#14F195] font-bold">Solana Devnet</span>
+                <span class="text-[9px] font-mono text-slate-600 block">RPC: api.devnet.solana.com</span>
+            </div>
+        </header>
+
+        <!-- Metrics Row -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="cyber-panel p-4 rounded-xl">
+                <span class="text-[9px] font-mono text-slate-400 block uppercase">Total Revenue</span>
+                <span id="dashRevenue" class="text-xl font-black text-[#14F195] block mt-1">0.000 SOL</span>
+            </div>
+            <div class="cyber-panel p-4 rounded-xl">
+                <span class="text-[9px] font-mono text-slate-400 block uppercase">Subscribers</span>
+                <span id="dashSubs" class="text-xl font-black text-purple-400 block mt-1">0</span>
+            </div>
+            <div class="cyber-panel p-4 rounded-xl">
+                <span class="text-[9px] font-mono text-slate-400 block uppercase">Churn Rate</span>
+                <span id="dashChurn" class="text-xl font-black text-orange-400 block mt-1">4.3%</span>
+            </div>
+            <div class="cyber-panel p-4 rounded-xl">
+                <span class="text-[9px] font-mono text-slate-400 block uppercase">Generated Links</span>
+                <span id="dashLinks" class="text-xl font-black text-yellow-400 block mt-1">0</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT COLUMN -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- AI Prompt Panel -->
+                <div class="cyber-panel p-6 rounded-2xl relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-purple-500 to-[#14F195]"></div>
+                    <span class="text-[10px] font-mono tracking-wider text-purple-400 block mb-1 uppercase">AI Prompt Creation</span>
+                    <h2 class="text-xl font-black mb-4">Generate a premium subscription checkout link</h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[9px] font-mono text-slate-400 uppercase mb-1">AI Prompt (natural language)</label>
+                            <textarea id="prodPrompt" rows="2" class="w-full bg-black/40 border border-purple-900/30 rounded-xl p-3 text-xs font-mono text-purple-200 outline-none focus:border-purple-500 transition-colors" placeholder="e.g. Create a premium 0.05 SOL yearly subscription for VIP users">Create a premium 0.01 SOL subscription checkout link</textarea>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="text-[9px] font-mono text-slate-400 block mb-1">PRODUCT</label>
+                                <input id="prodName" type="text" value="Aurus Premium" class="w-full bg-black/40 border border-purple-950 p-2.5 text-xs font-mono rounded-xl outline-none border-purple-900/30 text-white">
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-mono text-slate-400 block mb-1">PRICE (SOL)</label>
+                                <input id="prodPrice" type="number" step="0.001" value="0.01" class="w-full bg-black/40 border border-purple-950 p-2.5 text-xs font-mono rounded-xl outline-none border-purple-900/30 text-white">
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-mono text-slate-400 block mb-1">TIER</label>
+                                <select id="prodTier" class="w-full bg-black/40 border border-purple-950 p-2.5 text-xs font-mono rounded-xl outline-none border-purple-900/30 text-slate-300">
+                                    <option>Premium</option>
+                                    <option>VIP Tier</option>
+                                    <option>Basic</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onclick="generateWeb3Link()" class="w-full bg-gradient-to-r from-[#9945FF] to-[#14F195] text-black font-black py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all hover:opacity-90 active:scale-[0.99]">
+                            Generate Link ⚡
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Output Box -->
+                <div id="outputBox" class="hidden cyber-panel p-5 rounded-2xl border-emerald-500/20 bg-emerald-950/5 space-y-3">
+                    <div class="flex items-center space-x-2 text-[#14F195]">
+                        <span class="text-xs">✓</span>
+                        <h4 class="text-xs font-mono font-bold uppercase tracking-wider">Link Generated Successfully</h4>
+                    </div>
+                    <div class="space-y-2 text-xs font-mono">
+                        <div>
+                            <span class="text-[9px] text-slate-400 block mb-1">ACTIVE GATEWAY URL</span>
+                            <div class="flex space-x-2">
+                                <input id="linkOut" type="text" class="w-full bg-black/50 p-2.5 rounded-xl border border-purple-900/40 text-purple-300 outline-none text-xs" readonly>
+                                <button onclick="openCheckoutModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 rounded-xl text-xs font-bold font-mono transition-colors">Open</button>
+                                <button onclick="copyLink()" class="bg-black/50 border border-purple-900/40 text-slate-300 hover:text-white px-4 rounded-xl text-xs font-bold font-mono transition-colors">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generated Links List -->
+                <div class="cyber-panel p-5 rounded-2xl">
+                    <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-3">⚡ Generated Links</h3>
+                    <div id="linksList" class="space-y-2 max-h-[180px] overflow-y-auto">
+                        <p class="text-[11px] text-slate-500 italic">No links generated yet.</p>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="cyber-panel p-4 rounded-2xl">
+                        <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-3">Revenue Overview</h3>
+                        <canvas id="revenueChart" height="200"></canvas>
+                    </div>
+                    <div class="cyber-panel p-4 rounded-2xl">
+                        <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-3">Transaction Status</h3>
+                        <canvas id="statusChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="lg:col-span-5 space-y-4">
+
+                <!-- Ledger -->
+                <div class="cyber-panel p-4 rounded-2xl min-h-[300px]">
+                    <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-3">📋 Recent Activity Ledger</h3>
+                    <table class="w-full text-left font-mono text-[11px]">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-purple-950 pb-1.5 uppercase tracking-wider">
+                                <th class="pb-2">Tier</th>
+                                <th class="pb-2">Amount</th>
+                                <th class="pb-2">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerRows">
+                            <tr id="emptyRow" class="text-slate-500 italic text-center"><td colspan="3" class="pt-6">No live nodes broadcasted yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Phantom Wallet Hub -->
+                <div class="cyber-panel p-4 rounded-2xl">
+                    <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-3">Phantom Wallet Hub</h3>
+                    <div id="phantomCard" class="bg-black/30 border border-purple-950 p-4 rounded-xl glow-active transition-all">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-mono font-bold text-[#14F195]">PHANTOM CONNECTED</span>
+                            <span class="text-[9px] font-mono bg-emerald-500/10 text-[#14F195] px-1.5 py-0.5 rounded border border-emerald-500/20">Connected</span>
+                        </div>
+                        <div class="w-full bg-[#14F195]/5 border border-[#14F195]/20 text-[#14F195] font-mono text-[11px] py-2 rounded-lg text-center mb-2">
+                            Node: BFyQNW...FxDE4q
+                        </div>
+                        <button onclick="connectPhantom()" class="w-full bg-purple-900/40 border border-purple-500/30 text-purple-300 hover:bg-purple-900/60 font-mono text-xs py-2 rounded-lg transition-colors">
+                            Connect Phantom Wallet
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embedded Checkout Modal -->
+    <div id="checkoutModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="cyber-panel p-6 rounded-2xl max-w-lg w-full relative border-purple-500/30">
+            <button onclick="closeCheckoutModal()" class="absolute top-3 right-3 text-slate-500 hover:text-white text-lg leading-none">&times;</button>
+            <h3 class="text-sm font-mono font-bold text-purple-400 uppercase tracking-wider mb-4">Web3 Checkout Gateway</h3>
+
+            <div class="bg-purple-950/10 p-4 rounded-xl border border-purple-950/40 mb-4">
+                <div class="text-[9px] font-mono text-slate-400 uppercase mb-1">Order Summary</div>
+                <div class="text-lg font-black text-white" id="modalProduct">-</div>
+                <div class="text-xs text-purple-300 font-mono" id="modalTier">-</div>
+                <div class="mt-2 pt-2 border-t border-purple-950/40 flex justify-between text-xs font-mono">
+                    <span class="text-slate-400">Total Price:</span>
+                    <span class="text-[#14F195] font-bold" id="modalPrice">-</span>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button id="modalPayBtn" onclick="executePayment()" class="w-full bg-gradient-to-r from-[#9945FF] to-[#14F195] text-black font-mono text-xs py-3 rounded-lg font-black tracking-wider transition-all transform hover:scale-[1.01]">
+                    Subscribe with Phantom
+                </button>
+                <p class="text-[9px] font-mono text-slate-600 text-center">Devnet simulation · No real funds exchanged</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="backend.js"></script>
+    <script>
+        let currentProduct = 'Aurus Premium';
+        let currentPrice = 0.01;
+        let currentTier = 'Premium';
+        let revenueChart = null;
+        let statusChart = null;
+
+        function getBaseUrl() {
+            try {
+                const url = new URL(window.location.href);
+                return url.origin + url.pathname;
+            } catch {
+                return window.location.href.split('?')[0];
+            }
+        }
+
+        function parseUrlParams() {
+            const url = new URL(window.location.href);
+            const params = url.searchParams;
+            if (params.has('price')) currentPrice = parseFloat(params.get('price')) || 0.01;
+            if (params.has('tier')) currentTier = params.get('tier') || 'Premium';
+            if (params.has('product')) currentProduct = params.get('product') || 'Aurus Premium';
+            document.getElementById('prodPrice').value = currentPrice;
+            document.getElementById('prodTier').value = currentTier;
+            document.getElementById('prodName').value = currentProduct;
+            if (params.has('price') || params.has('tier') || params.has('product')) {
+                openCheckoutModal(false);
+            }
+        }
+
+        function generateWeb3Link() {
+            currentProduct = document.getElementById('prodName').value || 'Aurus Premium';
+            currentPrice = parseFloat(document.getElementById('prodPrice').value) || 0.01;
+            currentTier = document.getElementById('prodTier').value || 'Premium';
+
+            const baseUrl = getBaseUrl();
+            const gatewayUrl = `${baseUrl}?price=${currentPrice}&tier=${encodeURIComponent(currentTier)}&product=${encodeURIComponent(currentProduct)}`;
+
+            const id = `link-${Date.now().toString(36)}`;
+            window.AurusBackend.recordGeneratedLink({
+                id,
+                url: gatewayUrl,
+                product: currentProduct,
+                tier: currentTier,
+                price: currentPrice,
+            });
+
+            const outBox = document.getElementById('outputBox');
+            const linkField = document.getElementById('linkOut');
+            if (outBox && linkField) {
+                outBox.classList.remove('hidden');
+                linkField.value = gatewayUrl;
+            }
+            refreshDashboard();
+        }
+
+        function copyLink() {
+            const field = document.getElementById('linkOut');
+            if (field && field.value) {
+                navigator.clipboard.writeText(field.value).then(() => {
+                    alert('Link copied to clipboard');
+                });
+            }
+        }
+
+        function openCheckoutModal(shouldScroll = true) {
+            const modal = document.getElementById('checkoutModal');
+            if (!modal) return;
+            document.getElementById('modalProduct').textContent = currentProduct;
+            document.getElementById('modalTier').textContent = currentTier + ' Tier';
+            document.getElementById('modalPrice').textContent = currentPrice.toFixed(3) + ' SOL';
+            modal.classList.remove('hidden');
+            if (shouldScroll) modal.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function closeCheckoutModal() {
+            const modal = document.getElementById('checkoutModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function connectPhantom() {
+            if (window.solana && window.solana.isPhantom) {
+                window.solana.connect({ onlyIfTrusted: true }).catch(() => {});
+            }
+            alert('Simulating Phantom connection... Make sure Phantom is installed for full functionality.');
+        }
+
+        function executePayment() {
+            const btn = document.getElementById('modalPayBtn');
+            if (!btn) return;
+            try {
+                btn.disabled = true;
+                btn.textContent = '🚨 BROADCASTING TO DEVNET...';
+                setTimeout(() => {
+                    const statuses = ['Success', 'Success', 'Success', 'Pending', 'Failed'];
+                    const status = statuses[Math.floor(Math.random() * statuses.length)];
+                    window.AurusBackend.recordTransaction({
+                        id: `tx-${Date.now().toString(36)}`,
+                        signature: `sig-${Math.random().toString(36).substring(2, 15)}`,
+                        amount: currentPrice,
+                        tier: currentTier,
+                        product: currentProduct,
+                        status,
+                        timestamp: Date.now(),
+                    });
+                    const message = status === 'Success'
+                        ? 'Subscription successful! Transaction recorded.'
+                        : status === 'Pending'
+                            ? 'Transaction pending confirmation.'
+                            : 'Transaction failed. Please retry.';
+                    alert(message);
+                    btn.disabled = false;
+                    btn.textContent = 'Subscribe with Phantom';
+                    closeCheckoutModal();
+                    refreshDashboard();
+                }, 1200);
+            } catch (err) {
+                console.error('Payment error:', err);
+                alert('Payment failed: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = 'Subscribe with Phantom';
+            }
+        }
+
+        function updateLedger(transactions) {
+            const tbody = document.getElementById('ledgerRows');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (!transactions.length) {
+                tbody.innerHTML = '<tr id="emptyRow" class="text-slate-500 italic text-center"><td colspan="3" class="pt-6">No live nodes broadcasted yet.</td></tr>';
+                return;
+            }
+            transactions.slice(0, 8).forEach(tx => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-purple-950/30 text-slate-300';
+                const statusColor = tx.status === 'Success' ? 'emerald' : tx.status === 'Pending' ? 'yellow' : 'red';
+                const statusBg = tx.status === 'Success' ? 'bg-emerald-500/10 text-[#14F195] border-emerald-500/20' : tx.status === 'Pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20';
+                row.innerHTML = `
+                    <td class="py-2.5 text-purple-400 font-bold">${tx.tier || tx.product || '-'}</td>
+                    <td class="py-2.5">${Number(tx.amount).toFixed(3)} SOL</td>
+                    <td class="py-2.5"><span class="bg-${statusColor}-500/10 border border-${statusColor}-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold ${statusBg.replace('bg-', 'text-').replace('border-', '') ? '' : ''}">${tx.status.toUpperCase()}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateLinks(links) {
+            const container = document.getElementById('linksList');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!links.length) {
+                container.innerHTML = '<p class="text-[11px] text-slate-500 italic">No links generated yet.</p>';
+                return;
+            }
+            links.forEach(link => {
+                const div = document.createElement('div');
+                div.className = 'bg-black/40 border border-purple-900/20 p-2.5 rounded-lg flex justify-between items-center';
+                div.innerHTML = `
+                    <div class="truncate max-w-[70%]">
+                        <div class="text-[10px] font-bold text-white truncate">${link.product || 'Product'}</div>
+                        <div class="text-[9px] font-mono text-purple-300 truncate">${link.url}</div>
+                    </div>
+                    <span class="text-[9px] font-mono text-emerald-400">${link.price} SOL</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function initCharts() {
+            if (typeof Chart === 'undefined') return;
+            const revenueCtx = document.getElementById('revenueChart');
+            const statusCtx = document.getElementById('statusChart');
+            if (!revenueCtx || !statusCtx) return;
+
+            const history = window.AurusBackend.getMockRevenueHistory();
+            const counts = window.AurusBackend.getStatusCounts();
+
+            if (revenueChart) revenueChart.destroy();
+            if (statusChart) statusChart.destroy();
+
+            try {
+                revenueChart = new Chart(revenueCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Revenue (SOL)',
+                            data: history,
+                            borderColor: '#14F195',
+                            backgroundColor: 'rgba(20, 241, 149, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
+                        scales: {
+                            x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.05)' } },
+                            y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.05)' } },
+                        },
+                    },
+                });
+
+                statusChart = new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Success', 'Pending', 'Failed'],
+                        datasets: [{
+                            data: [counts.Success, counts.Pending, counts.Failed],
+                            backgroundColor: ['#14F195', '#eab308', '#ef4444'],
+                            borderColor: '#06040d',
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
+                    },
+                });
+            } catch (e) {
+                console.warn('Chart init failed:', e);
+            }
+        }
+
+        function refreshDashboard() {
+            try {
+                const revenue = window.AurusBackend.getTotalRevenue();
+                const subs = window.AurusBackend.getActiveSubscribers();
+                const churn = window.AurusBackend.getChurnRate();
+                const links = window.AurusBackend.getGeneratedLinks(8);
+                const transactions = window.AurusBackend.getRecentTransactions(8);
+
+                const revEl = document.getElementById('dashRevenue');
+                const subsEl = document.getElementById('dashSubs');
+                const churnEl = document.getElementById('dashChurn');
+                const linksEl = document.getElementById('dashLinks');
+                if (revEl) revEl.textContent = revenue.toFixed(3) + ' SOL';
+                if (subsEl) subsEl.textContent = subs;
+                if (churnEl) churnEl.textContent = churn.toFixed(1) + '%';
+                if (linksEl) linksEl.textContent = links.length;
+
+                updateLedger(transactions);
+                updateLinks(links);
+                initCharts();
+            } catch (e) {
+                console.warn('Dashboard refresh error:', e);
+            }
+        }
+
+        // AI Prompt debounce auto-fill
+        let promptTimer;
+        document.getElementById('prodPrompt').addEventListener('input', (e) => {
+            clearTimeout(promptTimer);
+            promptTimer = setTimeout(() => {
+                const parsed = window.AurusBackend.parseSubscriptionPrompt(e.target.value);
+                if (parsed && parsed.price > 0) {
+                    document.getElementById('prodPrice').value = parsed.price;
+                }
+            }, 600);
+        });
+
+        // Listen for backend state changes
+        window.addEventListener('aurusStateChanged', () => {
+            refreshDashboard();
+        });
+
+        // Initialize
+        parseUrlParams();
+        window.AurusBackend.initState();
+        refreshDashboard();
+    </script>
+</body>
+</html>
