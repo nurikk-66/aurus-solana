@@ -279,7 +279,8 @@
                 return state.transactions[0];
             }
             function getTotalRevenue() {
-                return loadState().transactions.filter((tx) => tx.status === 'Success').reduce((sum, tx) => sum + tx.amount, 0);
+                const state = loadState();
+                return state.transactions.filter((tx) => tx.status === 'Success').reduce((sum, tx) => sum + tx.amount, 0);
             }
             function getActiveSubscribers() {
                 const state = loadState();
@@ -344,6 +345,9 @@
         function getBaseUrl() {
             try {
                 const url = new URL(window.location.href);
+                if (url.origin === 'null') {
+                    return url.pathname;
+                }
                 return url.origin + url.pathname;
             } catch {
                 return window.location.href.split('?')[0];
@@ -351,6 +355,7 @@
         }
 
         function parseUrlParams() {
+            try {
             const url = new URL(window.location.href);
             const params = url.searchParams;
             if (params.has('price')) currentPrice = parseFloat(params.get('price')) || 0.01;
@@ -361,6 +366,9 @@
             document.getElementById('prodName').value = currentProduct;
             if (params.has('price') || params.has('tier') || params.has('product')) {
                 openCheckoutModal(false);
+            }
+            } catch (e) {
+                console.warn('parseUrlParams failed:', e);
             }
         }
 
@@ -601,9 +609,13 @@
         });
 
         // Initialize
-        parseUrlParams();
-        window.AurusBackend.initState();
-        refreshDashboard();
+        try {
+            parseUrlParams();
+            window.AurusBackend.initState();
+            refreshDashboard();
+        } catch (e) {
+            console.error('Init failed:', e);
+        }
     </script>
 </body>
 </html>
